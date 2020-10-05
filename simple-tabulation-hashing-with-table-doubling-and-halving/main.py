@@ -6,11 +6,22 @@ operations_dict = {
     "BUS": "search"
 }
 
+table = SimpleTabulationHashing("input_file.txt", 8)
+
 operations = []
 
 for line in file:
     operation, value = line.split(":")
     operations.append((operations_dict[operation], int(value)))
+    if operation == "INC":
+        retorno = table.insert(int(value))
+        print(operation, value, retorno)
+    elif operation == "REM":
+        retorno = table.remove(int(value))
+        print(operation, value, retorno)
+    elif operation == "BUS":
+        retorno = table.search(int(value))
+        print(operation, value, retorno)
 
 print(operations)
 file.close()

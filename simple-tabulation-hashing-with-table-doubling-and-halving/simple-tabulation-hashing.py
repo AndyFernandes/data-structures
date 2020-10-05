@@ -38,6 +38,7 @@ class RandomTable():
         return self.random_table[list_position][element_position]
 
 # return -1 pra falha na operação
+# return -1 pra falha na operação
 
 
 class SimpleTabulationHashing():
@@ -66,16 +67,16 @@ class SimpleTabulationHashing():
     def init_table(self): # ok
         return [None for _ in range(0, self.m)]
 
-    def load_file(self, filename): # ok
-        file = open(filename, "r")
+    def load_file(self): # ok
+        file = open(self.filename, "r")
 
         try:
             for line in file:
                 operation, value = line.split(":")
                 # self.log_operations.append((operations_dict[operation], int(value)))
                 # CHAMAR OPERACOES AQUI
-                operations_dict[operation](value)
-
+                result = operations_dict[operation](int(value))
+                print(OPERATION, VALUE, RESULT)
             # print(self.log_operations)
             return 1
         except:
@@ -137,6 +138,22 @@ class SimpleTabulationHashing():
         Keep a copy if x is a copy.
         OBS: Attention to table doubling.
         """
+
+        insert_ = False
+        i = 0
+        while (not insert_):
+            if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias e varias vezes circulamente
+                position_element = self.h_mod(x, i)
+                # print(i, position_element)
+                if self.table[position_element] == None or self.table[position_element] == FLAG:
+                    self.table[position_element] = x
+                    # TODO: VERIFICAR SE É P CHAMAR TABLE DOUBLING
+                    return 1
+                i += 1
+            else:
+                insert_ = True
+
+        self.count_elements += 1 
         #TODO: escrever no arquivo que passou por aqui
         return 1
 
@@ -148,12 +165,17 @@ class SimpleTabulationHashing():
         """
         position_element = self.search(x)
 
-        if self.table[position_element] is not None:
+        if position_element != -1:
+            print(position_element, self.table[position_element])
             self.table[position_element] = FLAG
+            self.count_elements -= 1 
+
+            # if (self.count_elements > this.) # TODO ver a formulazinha de 3
+            #     self.halving()
             return 1
         # TODO: verificar se é necessário chamar having ou doubling
         # TODO: escrever no arquivo que passou por aqui
-        return 0
+        return -1
 
     def search(self, x): # acho que ok
         """
@@ -165,6 +187,7 @@ class SimpleTabulationHashing():
         while (not find):
             if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias e varias vezes circulamente
                 position_element = self.h_mod(x, i)
+                # print(i, position_element)
                 if self.table[position_element] == x:
                     return position_element
                 i += 1
