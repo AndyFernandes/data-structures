@@ -1,38 +1,22 @@
-file = open("input_file.txt", "r")
+path = '/content/drive/My Drive/Acadêmico/UFC/Mestrado/2020.1/Estrutura de Dados/Trabalho 02/'
 
-operations_dict = {
-    "INC": "insert",
-    "REM": "remove",
-    "BUS": "search"
-}
+# file = open(path+"input_file.txt", "r")
 
-table = SimpleTabulationHashing("input_file.txt", 8)
+table = SimpleTabulationHashing(8)
 
-operations = []
+table.load_file(path+"input_file.txt")
+print(table.table)
 
-for line in file:
-    operation, value = line.split(":")
-    operations.append((operations_dict[operation], int(value)))
-    if operation == "INC":
-        retorno = table.insert(int(value))
-        print(operation, value, retorno)
-    elif operation == "REM":
-        retorno = table.remove(int(value))
-        print(operation, value, retorno)
-    elif operation == "BUS":
-        retorno = table.search(int(value))
-        print(operation, value, retorno)
+table.remove(42)
+table.remove(25)
+table.insert(25)
+table.insert(425)
+# table.insert(42)
+# table.search(42)
+# table.remove(42)
+# table.remove(42)
 
-print(operations)
-file.close()
+print(table.table)
+print(table.log_operations)
 
-
-rt = RandomTable(42)
-rt.get_element(7, 255)
-
-
-# path = '/content/drive/My Drive/Acadêmico/UFC/Mestrado/2020.1/Estrutura de Dados/Trabalho 02/'
-
-table = SimpleTabulationHashing("input_file.txt", 8)
-
-table.search(5)
+table.write_file(path+"out.txt")

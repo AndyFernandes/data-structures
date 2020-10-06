@@ -16,6 +16,7 @@ from random import seed
 FLAG = '#'
 SIZE_X = 64
 SEED = 42
+EPSILON = 1
 SIZE_HASH_TABLE = 10 # m
 SIZE_RANDOM_TABLE_AND_PIECES = 8 # c 
 SIZE_RANDOM_LISTS = 256 # 2^c
@@ -38,12 +39,8 @@ class RandomTable():
         return self.random_table[list_position][element_position]
 
 # return -1 pra falha na operação
-# return -1 pra falha na operação
-
-
 class SimpleTabulationHashing():
-    def __init__(self, filename, size_table, seed=42, threshold_halving=0.25, threshold_table_doubling=0.75, threshold_clear=0.25):
-        self.filename = filename
+    def __init__(self, size_table, seed=42, threshold_halving=0.25, threshold_table_doubling=0.75, threshold_clear=0.25):
         self.log_operations = [] # lista de tuplas que guardará o log das operações
 
         self.random_tables = RandomTable(seed)
@@ -58,104 +55,142 @@ class SimpleTabulationHashing():
         self.count_flags = 0 # p
         self.count_elements = 0 # numero de elementos da tabela principal
 
-        self.operations_dict = {
-            "INC": self.insert,
-            "REM": self.remove,
-            "BUS": self.search
-        }
-
-    def init_table(self): # ok
+    def init_table(self):
+        """
+            Init hash table with size m Nones
+            Params: None
+            Return: hash table with size m Nones
+        """ 
+        self.count_elements = 0
+        self.count_flags = 0
         return [None for _ in range(0, self.m)]
 
-    def load_file(self): # ok
-        file = open(self.filename, "r")
-
+    def load_file(self, filename):
+        """
+            Load file with list operations in this hash table
+            Params: filename
+            Return: 1, if operation was successful
+                    -1, c.c.
+        """ 
         try:
+            file = open(filename, "r")
             for line in file:
                 operation, value = line.split(":")
-                # self.log_operations.append((operations_dict[operation], int(value)))
-                # CHAMAR OPERACOES AQUI
-                result = operations_dict[operation](int(value))
-                print(OPERATION, VALUE, RESULT)
-            # print(self.log_operations)
+                if operation == "INC":
+                    retorno = self.insert(int(value))
+                elif operation == "REM":
+                    retorno = self.remove(int(value))
+                elif operation == "BUS":
+                    retorno = self.search(int(value))
+            file.close()
             return 1
         except:
             return -1
-        finally:
-            file.close()
+            
     
-    def write_file(self, filename, filename_out):
-        # TODO
-        return 1
+    def write_file(self, filename):
+        """
+            Write file with log operations in this hash table
+            Params: filename
+            Return: 1, if operation was successful
+                    -1, c.c.
+        """ 
+        try:
+            file = open(filename, 'w')
+            file.writelines("TAM:{}\n".format(self.m))
+            file.writelines(self.log_operations)
+            file.close()
+            return 1
+        except:
+            return -1
 
-    def get_pieces_8bits(self, x): # ok
+    def get_pieces_8bits(self, x): 
+        """
+            Partition the 64-bit integer into 8-bit chunks
+            Params: int 64bits x
+            Return: list of partition in binary, list of partition in decimal
+        """ 
         x_bin = bin(x).zfill(SIZE_X).replace('b', '')
-
         pieces = []
+
         for _ in range(SIZE_RANDOM_TABLE_AND_PIECES):
             pieces.append(x_bin[-SIZE_RANDOM_TABLE_AND_PIECES:])
             x_bin = x_bin[:-SIZE_RANDOM_TABLE_AND_PIECES]
 
         return pieces[::-1], [int(piece, 2) for piece in pieces[::-1]]
 
-    def h(self, x): # ok
+
+    def h(self, x):
+        """
+            Hash function of xor between elements random table
+            Params: int 64bits x
+            Return: value of xor between elements
+        """ 
         xor = 0
         pieces_bin, pieces_dec = self.get_pieces_8bits(x)
         for i, x in enumerate(pieces_dec):
             xor = xor ^ self.random_tables.get_element(i, x)
-            # print("lista {}[{}] = {}".format(i, x, rt.get_element(i, x)))
         return xor
 
-    def h_mod(self, x, i=0): # ok
+    def h_mod(self, x, i=0): # hash function of mod m
         return (self.h(x) + i) % self.m
 
-    # clear the remover's markers + shift values table
-    def clear(self):
-        #TODO: escrever no arquivo que passou por aqui
-        return 1
-
+    # auxiliar function
     def remap_values(self, old_table):
         for i, value in enumerate(old_table):
             if value != None and value != FLAG:
-                self.insert(value)
+                self.insert(value, False)
 
-    def table_doubling(self): # acho que ok
+    # clear the remover's markers + shift values table
+    def clear(self):
+        old_table = self.table.copy()
+        self.table = self.init_table()
+        self.log_operations.append("\nLIMPAR:{}\n".format(self.count_flags))
+        self.remap_values(old_table)
+        return 1
+
+    def table_doubling(self): 
         old_table = self.table.copy()
         self.m = self.m * 2
-        self.table = init_table()
+        self.table = self.init_table()
         self.remap_values(old_table)
-        #TODO: escrever que passou por aqui
+        self.log_operations.append("\nDOBRAR TAM:{}\n".format(self.m))
 
-    def halving(self): # acho que ok
-        old_table = self.table.copy()
-        self.m = self.m / 2
-        self.remap_values(old_table)
-        #TODO: escrever no arquivo que passou por aqui
+    def halving(self): 
+        if (self.m/2 >= (EPSILON+1)):
+            old_table = self.table.copy()
+            self.m = int(self.m / 2)
+            self.table = self.init_table()
+            self.remap_values(old_table)
+            self.log_operations.append("\nMETADE TAM:{}\n".format(self.m))
 
-    def insert(self, x):
+    def insert(self, x, registre_operation=True):
         """
         Insert integer x with 64 bits.
         Keep a copy if x is a copy.
         OBS: Attention to table doubling.
         """
-
         insert_ = False
         i = 0
         while (not insert_):
             if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias e varias vezes circulamente
                 position_element = self.h_mod(x, i)
-                # print(i, position_element)
                 if self.table[position_element] == None or self.table[position_element] == FLAG:
+                    if (self.table[position_element] == FLAG):
+                        self.count_flags -= 1
                     self.table[position_element] = x
-                    # TODO: VERIFICAR SE É P CHAMAR TABLE DOUBLING
+                    self.count_elements += 1
+
+                    if (registre_operation): # registrando log
+                        self.log_operations.append("\nINC:{}\n{} {}\n".format(x, self.h_mod(x, 0), i)) 
+                    
+                    if (self.count_elements >= (self.m * self.threshold_table_doubling)): # verificando se é necessário realizar table doubling
+                        self.table_doubling()    
                     return 1
                 i += 1
             else:
                 insert_ = True
-
-        self.count_elements += 1 
-        #TODO: escrever no arquivo que passou por aqui
-        return 1
+        return -1
 
     def remove(self, x):
         """
@@ -163,37 +198,43 @@ class SimpleTabulationHashing():
         First, search x. If find x, put flag # in position of x. Else, pass.
         OBS: Attention to halving.
         """
-        position_element = self.search(x)
+        position_element = self.search(x, False)
 
         if position_element != -1:
-            print(position_element, self.table[position_element])
             self.table[position_element] = FLAG
-            self.count_elements -= 1 
+            self.count_elements -= 1
+            self.count_flags += 1
 
-            # if (self.count_elements > this.) # TODO ver a formulazinha de 3
-            #     self.halving()
+            # registrando log
+            h_mod = self.h_mod(x, 0)
+            i = position_element - h_mod if position_element > h_mod else h_mod - position_element
+            self.log_operations.append("\nREM:{}\n{} {}\n".format(x, self.h_mod(x, 0), i)) 
+
+            if (self.count_flags >= (self.m * self.threshold_clear)): # verificando se é necessário realizar clear
+                self.clear() 
+
+            if (self.count_elements <= (self.m * self.threshold_halving)): # verificando se é necessário realizar halving
+                self.halving() 
             return 1
-        # TODO: verificar se é necessário chamar having ou doubling
-        # TODO: escrever no arquivo que passou por aqui
+        self.log_operations.append("\nREM:{}\n{} {}\n".format(x, self.h_mod(x, 0), -1)) 
         return -1
 
-    def search(self, x): # acho que ok
+    def search(self, x, registre_operation=True):
         """
         Search table's position of x
         """
-        
         find = False
         i = 0
         while (not find):
             if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias e varias vezes circulamente
                 position_element = self.h_mod(x, i)
-                # print(i, position_element)
                 if self.table[position_element] == x:
+                    if (registre_operation): # registrando log
+                        self.log_operations.append("\nBUS:{}\n{} {}\n".format(x, self.h_mod(x, 0), i))
                     return position_element
                 i += 1
             else:
                 find = True
-
-        # TODO: escrever no arquivo que passou por aqui
+        self.log_operations.append("\nBUS:{}\n{} {}\n".format(x, self.h_mod(x, 0), -1))
         return -1
     
