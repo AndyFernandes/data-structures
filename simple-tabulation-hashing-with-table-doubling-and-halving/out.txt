@@ -1,0 +1,52 @@
+TAM:16
+
+INC:10
+6 6
+
+INC:20
+5 5
+
+REM:10
+6 6
+
+METADE TAM:4
+
+INC:15
+0 0
+
+INC:15
+0 2
+
+DOBRAR TAM:8
+
+BUS:17
+2 -1
+
+REM:17
+2 -1
+
+BUS:42
+3 -1
+
+INC:42
+3 3
+
+INC:43
+7 7
+
+REM:42
+3 3
+
+BUS:25
+4 -1
+
+REM:25
+4 -1
+
+INC:25
+4 0
+
+INC:425
+7 1
+
+DOBRAR TAM:16

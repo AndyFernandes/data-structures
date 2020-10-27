@@ -1,16 +1,8 @@
-import random
 import numpy as np
 from random import seed
+import random
+import math
 
-
-"""
-    Códigos para olhar:
-    1. https://gist.github.com/sachinnair90/d2f720ff88f48dd4c057e6ced9d48913
-    2. https://gist.github.com/kshitizlondon/71a26b35262d48501afa8d693316089e
-    3. https://www.geeksforgeeks.org/implementation-of-hashing-with-chaining-in-python/
-    4. https://gist.github.com/divanibarbosa/bd0a83fed85a63042c51723fd82a5014
-
-"""
 
 # constantes
 FLAG = '#'
@@ -37,6 +29,7 @@ class RandomTable():
         if (list_position >= SIZE_RANDOM_TABLE_AND_PIECES or element_position >= SIZE_RANDOM_LISTS):
             return -1
         return self.random_table[list_position][element_position]
+
 
 # return -1 pra falha na operação
 class SimpleTabulationHashing():
@@ -132,24 +125,46 @@ class SimpleTabulationHashing():
             xor = xor ^ self.random_tables.get_element(i, x)
         return xor
 
-    def h_mod(self, x, i=0): # hash function of mod m
+    def h_mod(self, x, i=0):
+        """
+            Hash function of mod m
+            Params: int 64bits x
+                    i, represents displacement
+            Return: value of operation of h
+        """ 
         return (self.h(x) + i) % self.m
 
-    # auxiliar function
     def remap_values(self, old_table):
+        """
+            Auxiliar function to make remap of values table, through the new inserts
+            Params: old_table, represents old table with the old size and old positions of values
+            Return: None
+        """ 
         for i, value in enumerate(old_table):
             if value != None and value != FLAG:
                 self.insert(value, False)
 
-    # clear the remover's markers + shift values table
     def clear(self):
+        """
+            Function to remove the remover's markers + shift values table
+            OBS:    in classes he was taught to shift values. But the shift 
+                    operation can cause problems in the position of the elements 
+                    and etc., so I chose to do the insertion, to avoid conflicts 
+                    and problems with mapping the elements.
+            Params: None
+            Return: None
+        """ 
         old_table = self.table.copy()
         self.table = self.init_table()
         self.log_operations.append("\nLIMPAR:{}\n".format(self.count_flags))
         self.remap_values(old_table)
-        return 1
 
     def table_doubling(self): 
+        """
+            Function to doubling values table and remap this.
+            Params: None
+            Return: None
+        """ 
         old_table = self.table.copy()
         self.m = self.m * 2
         self.table = self.init_table()
@@ -157,18 +172,31 @@ class SimpleTabulationHashing():
         self.log_operations.append("\nDOBRAR TAM:{}\n".format(self.m))
 
     def halving(self): 
+        """
+            Function to doubling values table and remap this.
+            Params: None
+            Return: 1, if operation was successful
+                    -1, c.c.
+        """ 
         if (self.m/2 >= (EPSILON+1)):
             old_table = self.table.copy()
             self.m = int(self.m / 2)
             self.table = self.init_table()
             self.remap_values(old_table)
             self.log_operations.append("\nMETADE TAM:{}\n".format(self.m))
+            return 1
+        return -1
 
     def insert(self, x, registre_operation=True):
         """
         Insert integer x with 64 bits.
         Keep a copy if x is a copy.
         OBS: Attention to table doubling.
+
+        Params: integer x with 64 bits
+                bool registre_operation, to indicate if registre the operation in log (because the remap_values function)
+        Return: 1, if operation was successful
+                    -1, c.c.
         """
         insert_ = False
         i = 0
@@ -182,7 +210,7 @@ class SimpleTabulationHashing():
                     self.count_elements += 1
 
                     if (registre_operation): # registrando log
-                        self.log_operations.append("\nINC:{}\n{} {}\n".format(x, self.h_mod(x, 0), i)) 
+                        self.log_operations.append("\nINC:{}\n{} {}\n".format(x, self.h_mod(x, 0), self.h_mod(x, i))) 
                     
                     if (self.count_elements >= (self.m * self.threshold_table_doubling)): # verificando se é necessário realizar table doubling
                         self.table_doubling()    
@@ -195,8 +223,13 @@ class SimpleTabulationHashing():
     def remove(self, x):
         """
         Remove occurrence of x.
-        First, search x. If find x, put flag # in position of x. Else, pass.
-        OBS: Attention to halving.
+        First, search x. If find x, put flag # in position of x, and return 1.
+        Else, pass and return -1.
+        OBS: Attention to halving and clear.
+
+        Params: integer x with 64 bits
+        Return: 1, if operation was successful
+                    -1, c.c.
         """
         position_element = self.search(x, False)
 
@@ -208,7 +241,7 @@ class SimpleTabulationHashing():
             # registrando log
             h_mod = self.h_mod(x, 0)
             i = position_element - h_mod if position_element > h_mod else h_mod - position_element
-            self.log_operations.append("\nREM:{}\n{} {}\n".format(x, self.h_mod(x, 0), i)) 
+            self.log_operations.append("\nREM:{}\n{} {}\n".format(x, self.h_mod(x, 0), self.h_mod(x, i))) 
 
             if (self.count_flags >= (self.m * self.threshold_clear)): # verificando se é necessário realizar clear
                 self.clear() 
@@ -221,16 +254,24 @@ class SimpleTabulationHashing():
 
     def search(self, x, registre_operation=True):
         """
-        Search table's position of x
+        Search table's position of x.
+        If find x, return 1.
+        Else, return -1.
+
+        Params: integer x with 64 bits
+                bool registre_operation, to indicate if registre the operation in log (because the remove function) 
+
+        Return: 1, if operation was successful
+                    -1, c.c.
         """
         find = False
         i = 0
         while (not find):
-            if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias e varias vezes circulamente
+            if (i < self.m): # pra garantir que vai ter um break e não vai percorrer a lista varias vezes circulamente
                 position_element = self.h_mod(x, i)
                 if self.table[position_element] == x:
                     if (registre_operation): # registrando log
-                        self.log_operations.append("\nBUS:{}\n{} {}\n".format(x, self.h_mod(x, 0), i))
+                        self.log_operations.append("\nBUS:{}\n{} {}\n".format(x, self.h_mod(x, 0), self.h_mod(x, i)))
                     return position_element
                 i += 1
             else:
