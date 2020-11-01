@@ -13,7 +13,7 @@ class VEB:
 	def get_pair(self, x):
 		return self.c_(x), self.i_(x)
   
-	def __init__(self, w):
+	def __init__(self, w=64):
 		self.w = w
 		self.w_2 = math.floor(w/2)
 		self.u = 2**w
@@ -138,8 +138,8 @@ class VEB:
 					offset = 0
 					if cluster2 is not None:
 						offset = cluster2.max
-						return self.x_(c_linha, offset)
-		return -1
+					return self.x_(c_linha, offset)
+		return 0
 	
 	def remove(self, x):
 		if self.search(x):
@@ -150,6 +150,8 @@ class VEB:
 					else:
 						c = self.resumo.min
 					if c is None:
+						if self.min == self.max:
+							self.max = None
 						self.min = None
 						return True
 					self.min = self.x_(self.c_(x), self.clusters[c].min)
