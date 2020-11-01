@@ -143,29 +143,28 @@ class VEB:
 	
 	def remove(self, x):
 		if self.search(x):
-			if 1:
-				if x == self.min:
-					if self.u <=2 or (self.u > 2 and self.resumo is None):
-						c = None
-					else:
-						c = self.resumo.min
-					if c is None:
-						if self.min == self.max:
-							self.max = None
-						self.min = None
-						return True
-					self.min = self.x_(self.c_(x), self.clusters[c].min)
-					x = self.min
-				c = self.c_(x)
-				self.clusters[c].remove(self.i_(x))
-				if self.clusters[c].min is None:
-					self.resumo.remove(c)
-				if self.resumo.min is None:
-					self.max = self.min
+			if x == self.min:
+				if self.u <=2 or (self.u > 2 and self.resumo is None):
+					c = None
 				else:
-					c_linha = self.resumo.max
-					self.max = self.x_(c_linha, self.clusters[c_linha].max)
-				return True
+					c = self.resumo.min
+				if c is None:
+					if self.min == self.max:
+						self.max = None
+					self.min = None
+					return True
+				self.min = self.x_(self.c_(x), self.clusters[c].min)
+				x = self.min
+			c = self.c_(x)
+			self.clusters[c].remove(self.i_(x))
+			if self.clusters[c].min is None:
+				self.resumo.remove(c)
+			if self.resumo.min is None:
+				self.max = self.min
+			else:
+				c_linha = self.resumo.max
+				self.max = self.x_(c_linha, self.clusters[c_linha].max)
+			return True
 		else:
 			return False
 
