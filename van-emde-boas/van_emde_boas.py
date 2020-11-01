@@ -168,3 +168,50 @@ class VEB:
 				return True
 		else:
 			return False
+
+	def load_file(self, filename):
+		"""
+            Load file with list operations in this hash table
+            Params: filename
+            Return: 1, if operation was successful
+                    -1, c.c.
+		""" 
+		try:
+			file = open(filename, "r")
+			for line in file:
+				operation, value = line.split(":")
+				if operation == "INC":
+					self.insert(int(value))
+					self.log_operations.append("\nINC:{}\n".format(value))
+				elif operation == "REM":
+					retorno = self.remove(int(value))
+					self.log_operations.append("\nREM:{}\n{}\n".format(value, retorno))
+				elif operation == "BUS":
+					retorno = self.search(int(value))
+					self.log_operations.append("\nBUS:{}\n{}\n".format(value, retorno))
+				elif operation == "SUC":
+					retorno = self.sucessor(int(value))
+					self.log_operations.append("\nSUC:{}\n{}\n".format(value, retorno))
+				elif operation == "PRE":
+					retorno = self.predecessor(int(value))
+					self.log_operations.append("\nPRE:{}\n{}\n".format(value, retorno)) 
+			file.close()
+			return 1
+		except:
+			return -1
+            
+    
+	def write_file(self, filename):
+		"""
+            Write file with log operations in this hash table
+            Params: filename
+            Return: 1, if operation was successful
+                    -1, c.c.
+        """ 
+		try:
+			file = open(filename, 'w')
+			file.writelines(self.log_operations)
+			file.close()
+			return 1
+		except:
+			return -1
